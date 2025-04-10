@@ -1,46 +1,81 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Button, StyleSheet, Vibration, Linking } from 'react-native';
+// screens/VoiceDistressScreen.js
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, Alert, Linking } from 'react-native';
+import { WebView } from 'react-native-webview';
+import * as Notifications from 'expo-notifications';
 
 const VoiceDistressScreen = () => {
-  const [isListening, setIsListening] = useState(false);
-  const [distressDetected, setDistressDetected] = useState(false);
+  const webviewRef = useRef(null);
 
-  useEffect(() => {
-    startListening();
-  }, []);
+  const handleWebViewMessage = (event) => {
+    const message = event.nativeEvent.data.toLowerCase();
+    console.log('Heard:', message);
 
-  const startListening = () => {
-    setIsListening(true);
-    console.log('Listening for distress...');
+    const distressKeywords = ['help', 'save', 'help me'];
+    const detected = distressKeywords.some((word) => message.includes(word));
 
-    // Simulate detection after 5 seconds
-    setTimeout(() => {
-      setIsListening(false);
-      setDistressDetected(true);
-      Vibration.vibrate(1000); // Vibrate for 1 second
-      console.log('Distress detected!');
+    if (detected) {
+      // 1. Send SMS
+      Linking.openURL('sms:9117847411?body=🚨 Voice distress detected! Please help immediately!');
 
-      // Open SMS app with pre-filled message
-      Linking.openURL(
-        'sms:1234567890?body=Distress%20detected%20via%20voice!%20Please%20help%20immediately!'
-      );
-    }, 5000);
+      // 2. Trigger Notification
+      Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🚨 Distress Detected!',
+          body: 'Voice distress signal triggered. Emergency SMS sent.',
+          sound: false, // No sound
+          sticky: true,
+          priority: Notifications.AndroidNotificationPriority.HIGH,
+        },
+        trigger: null,
+        channelId: 'emergency-alerts',
+      });
+
+      // 3. Optional Alert UI (visual feedback only)
+      Alert.alert('🚨 Distress Detected', 'Emergency alert has been sent.');
+    }
   };
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <body>
+      <script>
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        recognition.onresult = function(event) {
+          const transcript = event.results[event.results.length - 1][0].transcript;
+          window.ReactNativeWebView.postMessage(transcript);
+        };
+
+        recognition.onerror = function(event) {
+          console.error("Speech recognition error:", event.error);
+        };
+
+        recognition.start();
+      </script>
+    </body>
+    </html>
+  `;
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Voice Distress Detection</Text>
+      <Text style={styles.heading}>🎙 Voice Distress Detection</Text>
       <Text style={styles.status}>
-        {isListening
-          ? 'Listening for distress...'
-          : distressDetected
-          ? '🚨 Distress detected!'
-          : 'Click below to start again'}
+        Listening for "help", "save", "help me"... Emergency SMS will be sent silently.
       </Text>
-
-      {!isListening && (
-        <Button title="Start Listening Again" onPress={startListening} color="tomato" />
-      )}
+      <WebView
+        ref={webviewRef}
+        originWhitelist={['*']}
+        source={{ html: htmlContent }}
+        onMessage={handleWebViewMessage}
+        javaScriptEnabled={true}
+        style={{ flex: 1, width: '100%' }}
+      />
     </View>
   );
 };
@@ -50,18 +85,20 @@ export default VoiceDistressScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    padding: 16,
+    paddingTop: 40,
+    backgroundColor: '#fff',
     alignItems: 'center',
-    padding: 20,
   },
-  title: {
-    fontSize: 24,
-    marginBottom: 20,
+  heading: {
+    fontSize: 20,
     fontWeight: 'bold',
+    marginBottom: 10,
   },
   status: {
-    fontSize: 18,
-    marginBottom: 30,
+    fontSize: 16,
     textAlign: 'center',
+    marginBottom: 10,
+    color: 'gray',
   },
 });

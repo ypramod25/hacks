@@ -1,13 +1,11 @@
-// screens/LoginScreen.js
 import React, { useState } from 'react';
 import {
   View,
   Text,
   TextInput,
-  Button,
+  TouchableOpacity,
   StyleSheet,
   Alert,
-  TouchableOpacity,
 } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../src/firebase';
@@ -20,7 +18,12 @@ export default function LoginScreen({ navigation }) {
     try {
       await signInWithEmailAndPassword(auth, email.trim(), password.trim());
       Alert.alert('Login Successful', 'Welcome back!');
-      navigation.navigate('Home');
+
+      // Reset navigation stack and go to Home tab
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'MainTabs', state: { routes: [{ name: 'Home' }] } }],
+      });
     } catch (error) {
       Alert.alert('Login Error', error.message);
     }
@@ -28,13 +31,13 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
+      <Text style={styles.title}>Welcome Back</Text>
 
       <TextInput
         style={styles.input}
         placeholder="Email"
+        placeholderTextColor="#666"
         keyboardType="email-address"
-        autoCapitalize="none"
         onChangeText={setEmail}
         value={email}
       />
@@ -42,12 +45,15 @@ export default function LoginScreen({ navigation }) {
       <TextInput
         style={styles.input}
         placeholder="Password"
+        placeholderTextColor="#666"
         secureTextEntry
         onChangeText={setPassword}
         value={password}
       />
 
-      <Button title="Login" onPress={handleLogin} />
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        <Text style={styles.buttonText}>Login</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         onPress={() => navigation.navigate('Register')}
@@ -60,9 +66,24 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: 'center' },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
-  input: { borderWidth: 1, padding: 10, marginBottom: 10, borderRadius: 8 },
+  container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#f9f9f9' },
+  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 30, textAlign: 'center' },
+  input: {
+    backgroundColor: '#fff',
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 16,
+    fontSize: 16,
+    elevation: 2,
+  },
+  button: {
+    backgroundColor: '#ff4d4d',
+    paddingVertical: 14,
+    borderRadius: 10,
+    elevation: 3,
+    marginBottom: 10,
+  },
+  buttonText: { textAlign: 'center', color: '#fff', fontSize: 16, fontWeight: '600' },
   linkContainer: { marginTop: 10, alignItems: 'center' },
-  link: { color: '#007bff', textDecorationLine: 'underline' },
+  link: { color: '#007bff', textDecorationLine: 'underline', fontSize: 14 },
 });

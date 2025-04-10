@@ -36,5 +36,5 @@ export default function Navigation() {
         <Tab.Screen name="About" component={AboutScreen} />
       </Tab.Navigator>
     </NavigationContainer>
-  );
+  );
 }

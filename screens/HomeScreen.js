@@ -56,5 +56,5 @@ export default function HomeScreen({ navigation }) {
 const homeStyles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   title: { fontSize: 24, marginBottom: 20 },
-  profileBox: { marginBottom: 20, alignItems: 'center' },
+  profileBox: { marginBottom: 20, alignItems: 'center' },
 });

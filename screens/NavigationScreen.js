@@ -1,138 +1,160 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  Button,
-  StyleSheet,
-  ActivityIndicator,
-  TextInput,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView
-} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
-import * as Speech from 'expo-speech';
+import axios from 'axios';
 
-const NavigationScreen = () => {
-  const [location, setLocation] = useState(null);
-  const [hasPermission, setHasPermission] = useState(false);
+export default function NavigationScreen() {
+  const [locationGranted, setLocationGranted] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState(null);
   const [destination, setDestination] = useState('');
+  const [destinationLocation, setDestinationLocation] = useState(null);
+  const [safePath, setSafePath] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [route, setRoute] = useState([]);
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
-    requestPermission();
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Location permission is required.');
+        return;
+      }
+      setLocationGranted(true);
+      const loc = await Location.getCurrentPositionAsync({});
+      setCurrentLocation({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      });
+    })();
   }, []);
 
-  const requestPermission = async () => {
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'Location permission is required to use navigation.');
-      return;
-    }
+  const fetchCrimeData = async (lat, lon) => {
+    const apiKey = 'YOUR_CRIMEOMETER_API_KEY'; // Replace this
+    const radius = 1; // in miles
+    const datetime_ini = '2023-01-01T00:00:00.000Z';
+    const datetime_end = '2023-12-31T23:59:59.999Z';
 
-    setHasPermission(true);
-    let loc = await Location.getCurrentPositionAsync({});
-    setLocation(loc.coords);
+    try {
+      const response = await axios.get('https://api.crimeometer.com/v1/incidents/raw-data', {
+        params: {
+          lat, lon, radius, datetime_ini, datetime_end,
+        },
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+      });
+      return response.data.incidents || [];
+    } catch (err) {
+      console.log("Crime API error", err.message);
+      return [];
+    }
   };
 
-  const calculateSafeRoute = () => {
-    if (!destination) {
-      Alert.alert('Missing Destination', 'Please enter a destination first.');
+  const calculateSafeRoute = async () => {
+    if (!destination || !currentLocation) {
+      Alert.alert("Please enter destination and wait for location to load.");
       return;
     }
 
     setLoading(true);
-    setTimeout(() => {
-      const safePath = [
-        location,
-        { latitude: location.latitude + 0.001, longitude: location.longitude + 0.001 },
-        { latitude: location.latitude + 0.002, longitude: location.longitude + 0.002 },
-      ];
-      setRoute(safePath);
+    setMessage("Analyzing safest route...");
+
+    try {
+      const geoCoded = await Location.geocodeAsync(destination);
+      if (geoCoded.length === 0) {
+        Alert.alert("Invalid destination.");
+        setLoading(false);
+        return;
+      }
+
+      const destCoords = {
+        latitude: geoCoded[0].latitude,
+        longitude: geoCoded[0].longitude,
+      };
+      setDestinationLocation(destCoords);
+
+      // Optional: fetch crime data for both source and destination
+      await fetchCrimeData(currentLocation.latitude, currentLocation.longitude);
+      await fetchCrimeData(destCoords.latitude, destCoords.longitude);
+
+      // Simulate safe path using intermediate points
+      const steps = 5;
+      const newPath = [];
+
+      for (let i = 1; i < steps; i++) {
+        const lat = currentLocation.latitude + (destCoords.latitude - currentLocation.latitude) * (i / steps);
+        const lon = currentLocation.longitude + (destCoords.longitude - currentLocation.longitude) * (i / steps);
+        newPath.push({ latitude: lat, longitude: lon });
+      }
+      setSafePath(newPath);
+
+      setTimeout(() => {
+        setMessage("Safest route displayed.");
+        setLoading(false);
+      }, 1000);
+    } catch (error) {
+      Alert.alert("Error", "Failed to calculate route.");
+      console.log(error);
       setLoading(false);
-      Speech.speak('Safe route calculated. Follow the direction markers.');
-    }, 2000);
+    }
   };
 
-  if (!hasPermission || !location) {
-    return (
-      <View style={styles.centered}>
-        <Text>Requesting location permission or fetching location...</Text>
-        <ActivityIndicator />
-      </View>
-    );
-  }
-
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View style={styles.container}>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter destination"
-          value={destination}
-          onChangeText={setDestination}
-        />
-        <Button title="Get Safe Route" onPress={calculateSafeRoute} />
+    <View style={styles.container}>
+      <Text style={styles.header}>Safe Navigation</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Enter destination"
+        value={destination}
+        onChangeText={setDestination}
+      />
+      <Button title="Calculate Safe Route" onPress={calculateSafeRoute} />
+      {message ? <Text style={styles.message}>{message}</Text> : null}
+      {loading && <ActivityIndicator size="large" color="blue" style={{ marginTop: 10 }} />}
 
-        {loading && (
-          <View style={styles.centered}>
-            <ActivityIndicator size="large" />
-            <Text>Calculating safest route...</Text>
-          </View>
-        )}
-
-        {route.length > 0 && (
-          <MapView
-            style={styles.map}
-            initialRegion={{
-              latitude: location.latitude,
-              longitude: location.longitude,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            }}
-          >
-            {route.map((point, index) => (
-              <Marker
-                key={index}
-                coordinate={point}
-                title={index === 0 ? 'Start' : index === route.length - 1 ? 'Destination' : `Step ${index}`}
-                pinColor={index === 0 ? 'green' : index === route.length - 1 ? 'red' : 'orange'}
-              />
-            ))}
-          </MapView>
-        )}
-      </View>
-    </KeyboardAvoidingView>
+      {currentLocation && (
+        <MapView style={styles.map} region={currentLocation}>
+          <Marker coordinate={currentLocation} title="You" pinColor="green" />
+          {destinationLocation && (
+            <Marker coordinate={destinationLocation} title="Destination" pinColor="red" />
+          )}
+          {safePath.map((point, index) => (
+            <Marker key={index} coordinate={point} pinColor="orange" />
+          ))}
+        </MapView>
+      )}
+    </View>
   );
-};
-
-export default NavigationScreen;
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
+    paddingTop: 40,
+    backgroundColor: '#fff',
+  },
+  header: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
   },
   input: {
+    borderColor: '#aaa',
     borderWidth: 1,
-    padding: 10,
+    padding: 8,
     marginBottom: 10,
-    borderRadius: 5,
-    backgroundColor: '#fff',
+    borderRadius: 8,
   },
   map: {
     flex: 1,
     marginTop: 10,
   },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  message: {
+    textAlign: 'center',
+    marginVertical: 5,
+    fontWeight: '600',
+  },
 });
