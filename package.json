@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "name": "MyJSProject",
+=======
+  "name": "myjsproject",
+>>>>>>> 413372d (Initial commit)
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -9,6 +13,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/native": "^7.1.6",
     "@react-navigation/native-stack": "^7.3.10",
@@ -25,6 +30,12 @@
     "expo-location": "~18.0.10",
     "react-native-maps": "1.18.0",
     "expo-speech": "~13.0.1"
+=======
+    "expo": "~52.0.43",
+    "expo-status-bar": "~2.0.1",
+    "react": "18.3.1",
+    "react-native": "0.76.9"
+>>>>>>> 413372d (Initial commit)
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

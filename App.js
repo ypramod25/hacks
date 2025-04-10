@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator, Text, StyleSheet, LogBox } from 'react-native';
 import * as Location from 'expo-location';
@@ -47,11 +48,24 @@ export default function App() {
   }
 
   return <Navigation />;
+=======
+import { StatusBar } from 'expo-status-bar';
+import { StyleSheet, Text, View } from 'react-native';
+
+export default function App() {
+  return (
+    <View style={styles.container}>
+      <Text>Open up App.js to start working on your app!</Text>
+      <StatusBar style="auto" />
+    </View>
+  );
+>>>>>>> 413372d (Initial commit)
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+<<<<<<< HEAD
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -62,5 +76,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     color: '#333',
+=======
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+>>>>>>> 413372d (Initial commit)
   },
 });

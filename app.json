@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+<<<<<<< HEAD
     "entryPoint": "index.js",
     "splash": {
       "image": "./assets/icon.png",
@@ -18,20 +19,35 @@
     "assetBundlePatterns": [
       "**/*"
     ],
+=======
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+>>>>>>> 413372d (Initial commit)
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
+<<<<<<< HEAD
         "backgroundColor": "#FFFFFF"
+=======
+        "backgroundColor": "#ffffff"
+>>>>>>> 413372d (Initial commit)
       }
     },
     "web": {
       "favicon": "./assets/favicon.png"
+<<<<<<< HEAD
     },
     "experimental": {
       "newArchEnabled": true
+=======
+>>>>>>> 413372d (Initial commit)
     }
   }
 }
